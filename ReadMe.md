@@ -1,4 +1,4 @@
-# Advent-of-Code-2023
+# Advent-of-Code-2024
 Advent of Code 2024 - ABAP programs
 
 ## Prerequisites for using the code in this repo
