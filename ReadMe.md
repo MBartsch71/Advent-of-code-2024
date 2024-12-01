@@ -12,6 +12,8 @@ For using the code in this repository there is a dependency package needed
 ### Day 1 - Historian Hysteria
 - ABAP Code
 	- [Source Code](src/ymbh_aoc_2024_day_1.prog.abap)
+- Input file
+    - [Iput file](input-files/Day1/input.txt)
 
 
 
