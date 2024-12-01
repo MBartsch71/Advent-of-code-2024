@@ -13,7 +13,7 @@ For using the code in this repository there is a dependency package needed
 - ABAP Code
 	- [Source Code](src/ymbh_aoc_2024_day_1.prog.abap)
 - Input file
-    - [Iput file](input-files/Day1/input.txt)
+    - [Input file](input-files/Day1/input.txt)
 
 
 
