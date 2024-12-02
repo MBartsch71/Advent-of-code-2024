@@ -16,7 +16,7 @@ CLASS safety_report DEFINITION FINAL.
            END OF table_check_item.
     TYPES table_checks TYPE STANDARD TABLE OF table_Check_item WITH EMPTY KEY.
 
-    types input_table_int TYPE STANDARD TABLE OF i with DEFAULT KEY.
+    TYPES input_table_int TYPE STANDARD TABLE OF i WITH DEFAULT KEY.
 
     METHODS line_is_consecutively
       IMPORTING
@@ -36,10 +36,15 @@ CLASS safety_report DEFINITION FINAL.
     METHODS get_amount_of_right_reports
       RETURNING
         VALUE(result) TYPE i.
+    METHODS revise_wrong_lines.
+    METHODS amount_of_right_rev_reports
+      RETURNING
+        VALUE(result) TYPE i.
 
   PRIVATE SECTION.
     DATA input_data TYPE stringtab.
     DATA analysis_result TYPE table_checks.
+    DATA revised_result TYPE table_checks.
 
     METHODS check_difference
       IMPORTING
@@ -63,7 +68,7 @@ CLASS safety_report IMPLEMENTATION.
 
 
   METHOD line_is_consecutively.
-    data input_table_numbers type input_table_int.
+    DATA input_table_numbers TYPE input_table_int.
 
     SPLIT input_data AT space INTO TABLE DATA(input_table).
 
@@ -134,6 +139,43 @@ CLASS safety_report IMPLEMENTATION.
                                             ELSE sum ) ).
   ENDMETHOD.
 
+
+  METHOD revise_wrong_lines.
+    DATA index TYPE i VALUE 1.
+    DATA(wrong_lines) = VALUE stringtab( FOR line IN analysis_result WHERE ( entry_safe = abap_false )
+                                    ( input_data[ line-tableline ] ) ).
+
+    LOOP AT wrong_lines REFERENCE INTO DATA(wrong_line).
+      DATA(wrong_line_index) = sy-tabix.
+
+      SPLIT wrong_line->* AT space INTO TABLE DATA(wrong_line_stringtab).
+      DO lines( wrong_line_stringtab ) TIMES.
+        DATA(new_tab) = wrong_line_stringtab.
+        DELETE new_Tab INDEX index.
+        DATA(new_Line) = REDUCE string( INIT result = ``
+                                        FOR tableline IN new_tab
+                                        NEXT result = |{ result } { tableline }| ).
+        DATA(new_line_condensed) = condense( val = new_line ).
+
+        DATA(line_result) = check_line( new_line_condensed ).
+        IF line_result = abap_true.
+          revised_result = VALUE #( BASE revised_result ( tableline = wrong_line_index
+                                                          entry_safe = line_result ) ).
+          EXIT.
+        ENDIF.
+
+        index += 1.
+      ENDDO.
+      index = 1.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD amount_of_right_rev_reports.
+    result = get_amount_of_right_reports( ) + lines( revised_result ).
+  ENDMETHOD.
+
 ENDCLASS.
 
 
@@ -152,7 +194,8 @@ CLASS test_safety_reports DEFINITION FINAL FOR TESTING
     METHODS entries_wrong_differences FOR TESTING.
     METHODS input_table_with_result FOR TESTING.
     METHODS right_amount_of_safe_reports FOR TESTING.
-    methods single_entry_check for testing.
+    METHODS single_entry_check FOR TESTING.
+    METHODS revised_table_result_ok FOR TESTING.
 ENDCLASS.
 
 CLASS test_safety_reports IMPLEMENTATION.
@@ -209,11 +252,18 @@ CLASS test_safety_reports IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD single_entry_check.
-    data(input_Data) = value stringtab( ( |14 12 10 7 4| ) ).
-    data(cut) = new safety_report( input_data ).
+    DATA(input_Data) = VALUE stringtab( ( |14 12 10 7 4| ) ).
+    DATA(cut) = NEW safety_report( input_data ).
     cut->analyze_data( ).
     cl_abap_unit_assert=>assert_equals( exp = 1 act = cut->get_amount_of_right_reports( )  ).
 
+  ENDMETHOD.
+
+  METHOD revised_table_result_ok.
+    cut->analyze_data( ).
+    cl_abap_unit_assert=>assert_equals( exp = 2 act = cut->get_amount_of_right_reports( ) ).
+    cut->revise_wrong_lines( ).
+    cl_abap_unit_assert=>assert_equals( exp = 4 act = cut->amount_of_right_rev_reports( ) ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -224,4 +274,5 @@ START-OF-SELECTION.
   analyzer->analyze_data( ).
 
   WRITE /: |The result of part 1 is: { analyzer->get_amount_of_right_reports( ) }|.
-  WRITE /: |The result of part 2 is: tbd|.
+  analyzer->revise_wrong_lines( ).
+  WRITE /: |The result of part 2 is: { analyzer->amount_of_right_rev_reports( ) }|.
