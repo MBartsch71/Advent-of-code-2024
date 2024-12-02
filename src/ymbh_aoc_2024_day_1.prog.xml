@@ -5,6 +5,7 @@
    <PROGDIR>
     <NAME>YMBH_AOC_2024_DAY_1</NAME>
     <DBAPL>S</DBAPL>
+    <DBNA>D$</DBNA>
     <SUBC>1</SUBC>
     <FIXPT>X</FIXPT>
     <LDBNAME>D$S</LDBNAME>
@@ -13,8 +14,8 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Advent of Code 2023 - Day 2 - Cube Conundrum</ENTRY>
-     <LENGTH>44</LENGTH>
+     <ENTRY>Advent of Code 2024 - Day 1 - Historian Hysteria</ENTRY>
+     <LENGTH>48</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
