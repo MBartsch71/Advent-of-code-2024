@@ -10,6 +10,8 @@ CLASS xmas_search DEFINITION FINAL.
     METHODS find_xmas_amount_vertical.
     METHODS find_xmas_amount_diagonal.
     METHODS process_input.
+    METHODS find_xmas_crosses.
+    METHODS reset_counter.
 
   PRIVATE SECTION.
     CONSTANTS regex_horizontal TYPE string VALUE '(?=XMAS|SAMX)'.
@@ -117,6 +119,39 @@ CLASS xmas_search IMPLEMENTATION.
     find_xmas_amount_diagonal( ).
   ENDMETHOD.
 
+
+  METHOD find_xmas_crosses.
+    DATA(index_from) = 1.
+    DATA(table_height) = lines( input ) - 2.
+    DATA(table_width) = strlen( input[ 1 ] ) - 2.
+
+    DO table_height TIMES.
+      DATA(part_table) = VALUE stringtab( FOR i = index_from THEN i + 1 UNTIL i = index_from + 3
+                                           ( input[ i ] ) ).
+      DATA(offset) = 0.
+      DO table_width TIMES.
+        DATA(expression) = |{ substring( val = part_table[ 1 ] off = offset len = 1 ) }| &&
+                           |{ substring( val = part_table[ 1 ] off = offset + 2 len = 1  ) }| &&
+                           |{ substring( val = part_table[ 2 ] off = offset + 1 len = 1 ) }| &&
+                           |{ substring( val = part_table[ 3 ] off = offset len = 1 ) }| &&
+                           |{ substring( val = part_table[ 3 ] off = offset + 2 len = 1 ) }|.
+
+        IF expression = |MSAMS| OR
+           expression = |MMASS| OR
+           expression = |SSAMM| OR
+           expression = |SMASM|.
+          occurences += 1.
+        ENDIF.
+        offset += 1.
+      ENDDO.
+      index_from += 1.
+    ENDDO.
+  ENDMETHOD.
+
+  METHOD reset_counter.
+    occurences = 0.
+  ENDMETHOD.
+
 ENDCLASS.
 
 
@@ -134,6 +169,8 @@ CLASS test_search DEFINITION FINAL FOR TESTING
     METHODS serch_pattern_diagonal FOR TESTING.
 
     METHODS combine_all_patterns FOR TESTING.
+    METHODS find_all_mas_crosses FOR TESTING.
+
 ENDCLASS.
 
 CLASS test_search IMPLEMENTATION.
@@ -198,6 +235,22 @@ CLASS test_search IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( exp = 18 act = cut->get_occurences( ) ).
   ENDMETHOD.
 
+  METHOD find_all_mas_crosses.
+    DATA(input) = VALUE stringtab( ( |.M.S......| )
+                                   ( |..A..MSMS.| )
+                                   ( |.M.S.MAA..| )
+                                   ( |..A.ASMSM.| )
+                                   ( |.M.S.M....| )
+                                   ( |..........| )
+                                   ( |S.S.S.S.S.| )
+                                   ( |.A.A.A.A..| )
+                                   ( |M.M.M.M.M.| )
+                                   ( |..........| ) ).
+    cut->set_input( input ).
+    cut->find_xmas_crosses( ).
+    cl_abap_unit_assert=>assert_equals( exp = 9 act = cut->get_occurences( ) ).
+  ENDMETHOD.
+
 ENDCLASS.
 
 START-OF-SELECTION.
@@ -207,4 +260,6 @@ START-OF-SELECTION.
   xmas_finder->process_input( ).
 
   WRITE /: |The result of part 1 is: { xmas_finder->get_occurences( ) }|.
-  WRITE /: |The result of part 2 is: tbd|.
+  xmas_finder->reset_counter( ).
+  xmas_finder->find_xmas_crosses( ).
+  WRITE /: |The result of part 2 is: { xmas_finder->get_occurences( ) }|.
