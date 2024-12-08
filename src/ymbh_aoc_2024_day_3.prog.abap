@@ -8,7 +8,7 @@ CLASS expression_finder DEFINITION FINAL.
              number_one   TYPE i,
              number_two   TYPE i,
              start_offset TYPE i,
-             length   TYPE i,
+             length       TYPE i,
            END OF expression_item.
     TYPES expressions TYPE STANDARD TABLE OF expression_item WITH EMPTY KEY.
 
@@ -22,24 +22,30 @@ CLASS expression_finder DEFINITION FINAL.
                                  RETURNING VALUE(result) TYPE i.
 
     METHODS find_instructions RETURNING VALUE(result) TYPE expressions.
-    METHODS calculate_with_instructions
-      IMPORTING
-        instructions  TYPE expression_finder=>expressions
-      RETURNING
-        VALUE(result) TYPE i.
+
+    METHODS calculate_with_instructions IMPORTING instructions  TYPE expression_finder=>expressions
+                                        RETURNING VALUE(result) TYPE i.
     METHODS reset_result.
 
   PRIVATE SECTION.
     DATA input TYPE string.
     DATA expressions_tab TYPE expressions.
 
-    DATA regex TYPE string VALUE 'mul\((\d{1,3}),(\d{1,3})\)'.
-    DATA regex_instruction TYPE string VALUE 'don['']t\(\)|do\(\)'.
+    CONSTANTS regex TYPE string VALUE 'mul\((\d{1,3}),(\d{1,3})\)'.
+    CONSTANTS regex_instruction TYPE string VALUE 'don['']t\(\)|do\(\)'.
 
     METHODS determine_end_offset IMPORTING index         TYPE i
                                            table         TYPE expressions
                                  RETURNING VALUE(result) TYPE i.
 
+    METHODS read_main_expression IMPORTING match         TYPE match_result
+                                 RETURNING VALUE(result) TYPE string.
+
+    METHODS get_first_factor IMPORTING match         TYPE match_result
+                             RETURNING VALUE(result) TYPE i.
+
+    METHODS get_second_factor IMPORTING match         TYPE match_result
+                              RETURNING VALUE(result) TYPE string.
 ENDCLASS.
 
 CLASS expression_finder IMPLEMENTATION.
@@ -52,9 +58,9 @@ CLASS expression_finder IMPLEMENTATION.
     FIND ALL OCCURRENCES OF PCRE regex IN input RESULTS DATA(matches).
 
     expressions_tab = VALUE #( FOR match IN matches
-                                ( whole_string = substring( val = input off = match-offset len = match-length )
-                                  number_one = CONV #( substring( val = input off = match-submatches[ 1 ]-offset len = match-submatches[ 1 ]-length ) )
-                                  number_two = CONV #( substring( val = input off = match-submatches[ 2 ]-offset len = match-submatches[ 2 ]-length ) )
+                                ( whole_string = read_main_expression( match )
+                                  number_one = get_first_factor( match )
+                                  number_two = get_second_factor( match )
                                   start_offset = match-offset ) ).
   ENDMETHOD.
 
@@ -68,7 +74,6 @@ CLASS expression_finder IMPLEMENTATION.
                        NEXT sum = sum + ( line-number_one * line-number_two ) ).
   ENDMETHOD.
 
-
   METHOD find_instructions.
     FIND ALL OCCURRENCES OF PCRE regex_instruction IN input RESULTS DATA(matches).
 
@@ -76,7 +81,7 @@ CLASS expression_finder IMPLEMENTATION.
                                             ( whole_string = substring( val = input off = match-offset len = match-length )
                                               start_offset = match-offset ) ).
 
-    data(kk) = strlen( input ).
+    DATA(kk) = strlen( input ).
     result = VALUE #( FOR line IN temp_result
                         INDEX INTO tab_index
                         LET length = determine_end_offset( index = tab_index
@@ -87,8 +92,8 @@ CLASS expression_finder IMPLEMENTATION.
                           number_two = line-number_two
                           start_offset = line-start_offset
                           length = COND #( WHEN length = -1
-                                                        THEN strlen( input ) - line-start_offset
-                                                        ELSE length ) ) ).
+                                             THEN strlen( input ) - line-start_offset
+                                             ELSE length ) ) ).
 
     IF result[ 1 ]-whole_string = |don't()|.
       DATA(start_line) = VALUE expression_item( whole_string = |do()| start_offset = 0 length = result[ 1 ]-start_offset ).
@@ -123,6 +128,18 @@ CLASS expression_finder IMPLEMENTATION.
 
   METHOD reset_result.
     CLEAR expressions_tab.
+  ENDMETHOD.
+
+  METHOD read_main_expression.
+    result = substring( val = input off = match-offset len = match-length ).
+  ENDMETHOD.
+
+  METHOD get_first_factor.
+    result = substring( val = input off = match-submatches[ 1 ]-offset len = match-submatches[ 1 ]-length ).
+  ENDMETHOD.
+
+  METHOD get_second_factor.
+    result = substring( val = input off = match-submatches[ 2 ]-offset len = match-submatches[ 2 ]-length ).
   ENDMETHOD.
 
 ENDCLASS.
