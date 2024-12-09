@@ -7,6 +7,8 @@ For using the code in this repository there is a dependency package needed
 	- [Github Repo](https://github.com/MBartsch71/ABAP_DATA_CLASSES)
 - ABAP_FRONTEND_FILES
 	- [Github Repo](https://github.com/MBartsch71/abap-frontend-files)
+- ABAP_BINARY_TOOLS
+    - [GitHub Repo](https.//github.com/MBartsch71/abap-binary-tools)
 
 ## Content
 ### Day 1 - Historian Hysteria
@@ -25,5 +27,12 @@ For using the code in this repository there is a dependency package needed
 - ABAP Code
     - [Source Code](src/ymbh_aoc_2024_day_4.prog.abap)
 
+## Day 6 - Guard Gallivant
+- ABAP Code
+    - [Source Code](src/ymbh_aoc_2024_day_6.prog.abap)
+
+## Day 7 - Bridge Repair
+- ABAP Code
+    - [Source Code](src/ymbh_aoc_2024_day_7.prog.abap)
 
 
